@@ -1,0 +1,4 @@
+use pyuic4 to generate ui27test:
+	pyuic4 -o ui27test.py test.ui
+
+then python use_ui.py
