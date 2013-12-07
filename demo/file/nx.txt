@@ -1,0 +1,16 @@
+welcome to read nx.txt
+this is a sample file
+所以就有中文啦
+python is a good language
+there are many 空行 在下面
+
+
+
+
+
+
+
+
+
+
+line 16! eof !
