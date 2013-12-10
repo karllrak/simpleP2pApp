@@ -17,13 +17,35 @@ class P2pMainWin( QMainWindow ):
 	def createConnections( self ):
 		self.connect( self.ui.fileOpenAction, SIGNAL('triggered()'),\
 				self.openFiles )
-	
-	
+	pass
+
+def setDownLoadDir():
+
+
+def readConfigFile( fullpath ):
+	pass
+
+def createConfigFile( fullpath ):
+	pass
+
+configuration = {}
+import os
+if 'nt' in os.name: #winXP or win7/8
+	configuration['osprefix'] = '_'
+else:
+	configuration['osprefix'] = '.'
+configFileFullPath = '~'+os.sep+configuration['osprefix']+'simpleP2p'
+if os.path.isfile( configFileFullPath ):
+	readConfigFile( configFileFullPath )
+else:
+	createConfigFile( configFileFullPath )
+
 
 import sys
 app = QApplication( sys.argv )
 
 myMainWin = P2pMainWin()
+if 
 myMainWin.show()
 
 sys.exit( app.exec_() )
