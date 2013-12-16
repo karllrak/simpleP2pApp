@@ -16,98 +16,8 @@ from server import Server
 from threading import Thread
 from ui.ui_mainwindow import *
 from peer import AllPeerInfo, PeerInfo
+from p2pmainwin import P2pMainWin
 
-config = {}
-
-class P2pMainWin( QMainWindow ):
-	appInstance = None
-	def __init__( self ):
-		QMainWindow.__init__( self, parent=None )
-		self.ui = Ui_MainWindow()
-		self.ui.setupUi( self )
-		self.createConnections()
-		self.setFixedSize(500,500)
-		for peer in AllPeerInfo.goodPeerIpList:
-			self.ui.peerListWidget.addItem( peer )
-
-	def modallessMessageBox( text ):
-		mb = QMessageBox()
-		mb.setText( text )
-		mb.setModal( False )
-		mb.show()
-
-	def setNetFileList( self, l ):
-		for item in l:
-			self.ui.localFileListWidget.addItem( item )
-
-	def downloadFile( self ):
-		selectedList = self.ui.localFileListWidget.selectedItems()
-		if 0 == len(selectedList):
-			QMessageBox.information(None,'Error',u'没有选择任何文件')
-		else:
-			logging.info( 'download file begin' )
-			#a list a filename to be download, actually there is only one
-			filenameList = [str(i.text()) for i in selectedList]
-			statusBar = self.statusBar()
-			statusBar.showMessage( u'下载文件'+filenameList[0]+u'中...', 4 )
-			print u'downloading file... '+str(filenameList)
-			downloadThread( filenameList )
-
-	def openFiles( self ):
-		print( 'You are trying to openFiles' )
-	def searchFile( self ):
-		filename = self.ui.searchLineEdit.text()
-		logging.info( u'search for file '+filename )
-		statusBar = self.statusBar()
-		statusBar.showMessage( u'搜索文件'+filename+u'中', 3 )
-		print u'searching file '+filename
-
-	def createConnections( self ):
-		self.connect( self.ui.fileOpenAction, SIGNAL('triggered()'),\
-				self.openFiles )
-		self.connect( self.ui.downloadBtn, SIGNAL('clicked()'),\
-				self.downloadFile )
-		self.connect( self.ui.searchBtn, SIGNAL('clicked()'),\
-				self.searchFile )
-	pass
-
-def downloadThread( flist ):
-	for f in flist:
-		t = Thread( target=downloadFile, args=(f,) )
-		t.start()
-def downloadFile( filename ):
-	#todo download file from multi ip
-	ip = AllPeerInfo.getIpListByFilename( filename )
-	#todo else?
-	if ip:
-		#todoi duplicate codes with peer.py line 52
-		#can use a class Name request blablabla
-		s = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
-		s.connect( (ip, config['port']) )
-		logging.info( 'downloadFile connected to '+ip+' '+str(config['port']) )
-		#todo extend the fields	
-		dataSend = json.dumps( dict(type='GF',filename=filename) )
-		s.send( dataSend )
-		s.settimeout( 500 )
-		while True:
-			try:
-				dataGet = s.recv( RECVBUFFSIZE )
-			except socket.timeout:
-				logging.info( 'time out when downloadFile( %s )', ip )
-				s.close()
-				break
-			else:
-				try:
-					dataGet = json.loads( dataGet )
-				except ValueError:
-					print 'downloadFile json.loads meet ValueError with dat\
-						\n'+str( dataGet )
-					s.close()
-					break
-				if ENDOFCONNECTION == parseDataGet(None,dataGet,(s,(ip,config['port'])))
-					s.close()
-					break
-			pass
 
 def readConfigFile( fullpath ):
 	pass
@@ -180,7 +90,7 @@ def parseDataGet( obj, data, info ):
 		iCur = 0
 		#minus 2048 for some other field such as type, and there will be many / added by json
 		dataRead = f.read( RECVBUFFSIZE-2048 ) 
-		while dataRead:
+		while P2pMainWin.running and dataRead:
 			dataSend = json.dumps(\
 					dict( type='FL', seq=str(iCur)+' '+str(iTtl),data=dataRead ) )
 			if len( dataSend ) < RECVBUFFSIZE:

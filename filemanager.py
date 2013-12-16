@@ -1,10 +1,11 @@
-from threading import Thread
-from threading import BoundedSemaphore
 import json
 import time
 import os
 import hashlib
 import logging
+from p2pconstants import *
+from threading import Thread
+from threading import BoundedSemaphore
 #coding=utf-8
 class FileInfo:
 	def __init__( self, dirname=None, fname=None ):
@@ -35,9 +36,17 @@ class FileMgr:
 	def syncd():
 		logging.info( 'sync daemon started' )
 #todoi when to stop?
-		while True:
-			FileMgr.syncRoutine()
-			time.sleep( FileMgr.syncInterval )
+		i = 0
+		from p2pmainwin import *
+		while P2pMainWin.running:
+			print str(P2pMainWin.running)+' syncd'
+			if FileMgr.syncInterval == i:
+				i = 0
+				FileMgr.syncRoutine()
+			else:
+				i = i + 1
+				time.sleep( 1 )
+		print 'syncd exiting'
 		pass
 	@staticmethod
 	def syncRoutine():
@@ -65,7 +74,8 @@ class FileMgr:
 
 			f = open(os.sep.join([dirname,fname]),'r')
 			dataRead = f.read( FileMgr.fileBlockSize )
-			while dataRead:
+			while P2pMainWin.running and dataRead:
+				print P2pMainWin.running
 				fi.hashArray.append( hashlib.sha1(dataRead).hexdigest())
 				dataRead = f.read( FileMgr.fileBlockSize )
 			f.close()

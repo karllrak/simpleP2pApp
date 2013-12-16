@@ -1,8 +1,9 @@
 import socket
 import logging
 import json
-from p2pconstants import RECVBUFFSIZE, ENDOFCONNECTION
+from p2pconstants import *
 from threading import Thread
+from p2pmainwin import *
 
 class Server:
 	serverRunning = True
@@ -18,10 +19,17 @@ class Server:
 	@staticmethod
 	def serverRoutine( s ):
 		logging.info( 'server start listening' )
-		while Server.serverRunning:
-			conSck, conAddr = s.accept()
-			t = Thread( target=Server.serverAccept,args=((conSck,conAddr),) )
-			t.start()
+		s.settimeout(0.5)
+		while P2pMainWin.running and Server.serverRunning:
+			try:
+				conSck, conAddr = s.accept()
+			except socket.timeout:
+				continue
+			else:
+				t = Thread( target=Server.serverAccept,args=((conSck,conAddr),) )
+				t.start()
+			#print P2pMainWin.running
+		print 'serverRunning ended'
 		pass
 
 	@staticmethod
@@ -36,7 +44,8 @@ class Server:
 		'''
 		logging.info( 'serverAccept connected to '+str(conInfo[1]) )
 		conInfo[0].settimeout( 2 )
-		while True:
+		while P2pMainWin.running:
+			print P2pMainWin.running
 			try:
 				dataGet = conInfo[0].recv( RECVBUFFSIZE ) #todo warning too small buffer
 			except socket.timeout:
@@ -58,6 +67,8 @@ class Server:
 								d, conInfo ):
 							conInfo[0].close()
 							break
+		print 'serverAccept ended ' + str(conInfo[1])
+		conInfo[0].close()
 		pass
 	
 

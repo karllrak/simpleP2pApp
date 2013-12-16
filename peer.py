@@ -8,6 +8,7 @@ class PeerInfo:
 	#todo nickname for peer
 	def __init__( self, ip=None ):
 		self.ip = ip
+		#{ filename={filesize=x,dirname=x,hasharray=[]}
 		self.fileDict = None
 		if ip:
 			logging.info( 'peer with ip '+ip+' created' )
@@ -18,8 +19,17 @@ class AllPeerInfo:
 	port = 10087
 	#goodPeerIpList = ['10.0.2.15','10.22.142.138']
 	goodPeerIpList = ['10.22.142.138']
+	# { 'ip':PeerInfo }
 	peerList = {}
 	parseDataGet = None
+	@staticmethod
+	def getIpListByFilename( fname ):
+		l = []
+		for ip, peerInfo in AllPeerInfo.peerList.iteritems():
+			if fname in peerInfo.fileDict:
+				l.append( ip )
+		return l
+
 	@staticmethod
 	def getPeer( ip ):
 		if ip in AllPeerInfo.peerList:
@@ -56,8 +66,9 @@ class AllPeerInfo:
 		dataSend = json.dumps( \
 			dict( type='GFL', seq='0 0' ) )
 		s.send( dataSend )
-		s.settimeout( 500 )
-		while True:
+		s.settimeout( 2 )
+		from p2pmainwin import *
+		while P2pMainWin.running:
 			try:
 				dataGet = s.recv( RECVBUFFSIZE ) #todo warning too small?
 				#dataGet = dataGet.strip()
@@ -78,3 +89,4 @@ class AllPeerInfo:
 						s.close()
 						break
 			pass
+		s.close()

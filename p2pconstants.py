@@ -2,3 +2,6 @@
 RECVBUFFSIZE = 8192
 ENDOFCONNECTION = 65535
 ERR = -1
+P2PRUNNING = True
+#the evil global variable!
+config = {}
