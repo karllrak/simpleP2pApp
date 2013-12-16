@@ -1,7 +1,7 @@
 import logging
 import socket
 import json
-from p2pconstants import ENDOFCONNECTION,RECVBUFFSIZE
+from p2pconstants import *
 from threading import Thread
 
 class PeerInfo:
@@ -16,7 +16,8 @@ class PeerInfo:
 class AllPeerInfo:
 	#peerList = ['10.0.2.15',]
 	port = 10087
-	goodPeerIpList = ['10.0.2.15','10.22.142.138']
+	#goodPeerIpList = ['10.0.2.15','10.22.142.138']
+	goodPeerIpList = ['10.22.142.138']
 	peerList = {}
 	parseDataGet = None
 	@staticmethod
@@ -50,6 +51,8 @@ class AllPeerInfo:
 			pass
 		s = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
 		s.connect( (ipAddr,AllPeerInfo.port) )
+		logging.info( 'getOnePeerFileList connected to '+ipAddr+' '+str(\
+				AllPeerInfo.port) )
 		dataSend = json.dumps( \
 			dict( type='GFL', seq='0 0' ) )
 		s.send( dataSend )
@@ -57,12 +60,18 @@ class AllPeerInfo:
 		while True:
 			try:
 				dataGet = s.recv( RECVBUFFSIZE ) #todo warning too small?
+				#dataGet = dataGet.strip()
 			except socket.timeout:
 				logging.info( 'time out when getOnePeerFileList( %s )', ipAddr )
 				s.close()
 				break
 			else: #get the peer response
-				dataGet = json.loads( dataGet )
+				try:
+					dataGet = json.loads( dataGet )
+				except ValueError:
+					print 'getOnePeerFileList json.loads meet ValueError with\n'+str(dataGet)
+					s.close()
+					break
 				if AllPeerInfo.parseDataGet:
 					if ENDOFCONNECTION == AllPeerInfo().parseDataGet(\
 							dataGet, (s,(ipAddr,AllPeerInfo.port)) ):

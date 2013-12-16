@@ -34,7 +34,7 @@ class Server:
 		@return
 		return nothing
 		'''
-		logging.info( 'connected to '+str(conInfo) )
+		logging.info( 'serverAccept connected to '+str(conInfo[1]) )
 		conInfo[0].settimeout( 2 )
 		while True:
 			try:
@@ -45,24 +45,19 @@ class Server:
 				break
 			else:
 				try:
-					dataGet = json.loads( dataGet )
+					d = json.loads( dataGet )
 				except ValueError:
 					dataSend = json.dumps(\
 						dict( type='ERR',data='Invalid format') )
 					conInfo[0].send( dataSend )
-					logging.error( 'json.loads meet ValueError from '+str(conInfo) )
+					logging.error( 'json.loads  in serverAccept   meet ValueError from '+str(conInfo[1])+'\nwithdata:\n'+str(dataGet) )
 				else:
+					#dataGet can be json.loads  as d
 					if Server.parseDataGet:
 						if ENDOFCONNECTION == Server().parseDataGet(\
-								dataGet, conInfo ):
+								d, conInfo ):
 							conInfo[0].close()
 							break
 		pass
 	
-
-
-
-
-
-
 

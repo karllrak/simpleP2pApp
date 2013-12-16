@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'mainwindow.ui'
+# Form implementation generated from reading ui file 'ui/mainwindow.ui'
 #
-# Created: Sat Dec 14 16:59:56 2013
+# Created: Mon Dec 16 09:10:03 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -30,31 +30,32 @@ class Ui_MainWindow(object):
         self.centralwidget = QtGui.QWidget(MainWindow)
         self.centralwidget.setObjectName(_fromUtf8("centralwidget"))
         self.widget = QtGui.QWidget(self.centralwidget)
-        self.widget.setGeometry(QtCore.QRect(10, 10, 481, 431))
+        self.widget.setGeometry(QtCore.QRect(10, 10, 471, 421))
         self.widget.setObjectName(_fromUtf8("widget"))
         self.gridLayout = QtGui.QGridLayout(self.widget)
         self.gridLayout.setMargin(0)
         self.gridLayout.setObjectName(_fromUtf8("gridLayout"))
         self.searchLineEdit = QtGui.QLineEdit(self.widget)
         self.searchLineEdit.setObjectName(_fromUtf8("searchLineEdit"))
-        self.gridLayout.addWidget(self.searchLineEdit, 0, 0, 1, 1)
-        spacerItem = QtGui.QSpacerItem(40, 20, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
-        self.gridLayout.addItem(spacerItem, 0, 1, 1, 1)
-        self.searchBtn = QtGui.QPushButton(self.widget)
-        self.searchBtn.setObjectName(_fromUtf8("searchBtn"))
-        self.gridLayout.addWidget(self.searchBtn, 0, 2, 1, 1)
+        self.gridLayout.addWidget(self.searchLineEdit, 1, 0, 1, 1)
+        self.downloadBtn = QtGui.QPushButton(self.widget)
+        self.downloadBtn.setObjectName(_fromUtf8("downloadBtn"))
+        self.gridLayout.addWidget(self.downloadBtn, 1, 3, 1, 1)
         self.label = QtGui.QLabel(self.widget)
         self.label.setObjectName(_fromUtf8("label"))
-        self.gridLayout.addWidget(self.label, 1, 0, 1, 1)
+        self.gridLayout.addWidget(self.label, 2, 0, 1, 1)
         self.label_2 = QtGui.QLabel(self.widget)
         self.label_2.setObjectName(_fromUtf8("label_2"))
-        self.gridLayout.addWidget(self.label_2, 1, 1, 1, 1)
+        self.gridLayout.addWidget(self.label_2, 2, 1, 1, 1)
         self.localFileListWidget = QtGui.QListWidget(self.widget)
         self.localFileListWidget.setObjectName(_fromUtf8("localFileListWidget"))
-        self.gridLayout.addWidget(self.localFileListWidget, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.localFileListWidget, 3, 0, 1, 1)
         self.peerListWidget = QtGui.QListWidget(self.widget)
         self.peerListWidget.setObjectName(_fromUtf8("peerListWidget"))
-        self.gridLayout.addWidget(self.peerListWidget, 2, 1, 1, 2)
+        self.gridLayout.addWidget(self.peerListWidget, 3, 1, 1, 3)
+        self.searchBtn = QtGui.QPushButton(self.widget)
+        self.searchBtn.setObjectName(_fromUtf8("searchBtn"))
+        self.gridLayout.addWidget(self.searchBtn, 1, 1, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtGui.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 500, 22))
@@ -78,9 +79,10 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow", None))
-        self.searchBtn.setText(_translate("MainWindow", "PushButton", None))
+        self.downloadBtn.setText(_translate("MainWindow", "下载(&download)", None))
         self.label.setText(_translate("MainWindow", "本地文件", None))
         self.label_2.setText(_translate("MainWindow", "伙伴", None))
+        self.searchBtn.setText(_translate("MainWindow", "搜索(&search)", None))
         self.menu.setTitle(_translate("MainWindow", "文件", None))
         self.fileOpenAction.setText(_translate("MainWindow", "打开", None))
         self.fileOpenAction.setShortcut(_translate("MainWindow", "Ctrl+O", None))

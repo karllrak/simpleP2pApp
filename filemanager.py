@@ -21,10 +21,10 @@ class FileMgr:
 	#local file hash in parts
 	localFileDict = {}
 	localHashFilePath = None
-	syncInterval = 20
+	syncInterval = 120
 	downloadDirPath = None
 	fileWriteSema = None
-	fileBlockSize = 65536 #64kb
+	fileBlockSize = 1024*64 
 	@staticmethod
 	def init():
 		FileMgr.fileWriteSema = BoundedSemaphore( value=1 )

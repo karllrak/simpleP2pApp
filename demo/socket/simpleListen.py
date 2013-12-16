@@ -1,7 +1,8 @@
 #coding=utf-8
 import socket
 
-hostname = 'localhost'
+#hostname = 'localhost'
+hostname = '10.22.142.138'
 port = 10087
 serverSck = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
 serverSck.bind( ( hostname, port ) )

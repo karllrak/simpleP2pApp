@@ -7,7 +7,7 @@ import socket
 import sys
 from filemanager import *
 from getIp import *
-from p2pconstants import RECVBUFFSIZE,ERR
+from p2pconstants import *
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 from peer import PeerInfo, AllPeerInfo
@@ -20,22 +20,94 @@ from peer import AllPeerInfo, PeerInfo
 config = {}
 
 class P2pMainWin( QMainWindow ):
+	appInstance = None
 	def __init__( self ):
 		QMainWindow.__init__( self, parent=None )
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi( self )
 		self.createConnections()
 		self.setFixedSize(500,500)
-		for peer in AllPeerInfo.findPeers():
+		for peer in AllPeerInfo.goodPeerIpList:
 			self.ui.peerListWidget.addItem( peer )
+
+	def modallessMessageBox( text ):
+		mb = QMessageBox()
+		mb.setText( text )
+		mb.setModal( False )
+		mb.show()
+
+	def setNetFileList( self, l ):
+		for item in l:
+			self.ui.localFileListWidget.addItem( item )
+
+	def downloadFile( self ):
+		selectedList = self.ui.localFileListWidget.selectedItems()
+		if 0 == len(selectedList):
+			QMessageBox.information(None,'Error',u'没有选择任何文件')
+		else:
+			logging.info( 'download file begin' )
+			#a list a filename to be download, actually there is only one
+			filenameList = [str(i.text()) for i in selectedList]
+			statusBar = self.statusBar()
+			statusBar.showMessage( u'下载文件'+filenameList[0]+u'中...', 4 )
+			print u'downloading file... '+str(filenameList)
+			downloadThread( filenameList )
 
 	def openFiles( self ):
 		print( 'You are trying to openFiles' )
+	def searchFile( self ):
+		filename = self.ui.searchLineEdit.text()
+		logging.info( u'search for file '+filename )
+		statusBar = self.statusBar()
+		statusBar.showMessage( u'搜索文件'+filename+u'中', 3 )
+		print u'searching file '+filename
 
 	def createConnections( self ):
 		self.connect( self.ui.fileOpenAction, SIGNAL('triggered()'),\
 				self.openFiles )
+		self.connect( self.ui.downloadBtn, SIGNAL('clicked()'),\
+				self.downloadFile )
+		self.connect( self.ui.searchBtn, SIGNAL('clicked()'),\
+				self.searchFile )
 	pass
+
+def downloadThread( flist ):
+	for f in flist:
+		t = Thread( target=downloadFile, args=(f,) )
+		t.start()
+def downloadFile( filename ):
+	#todo download file from multi ip
+	ip = AllPeerInfo.getIpListByFilename( filename )
+	#todo else?
+	if ip:
+		#todoi duplicate codes with peer.py line 52
+		#can use a class Name request blablabla
+		s = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+		s.connect( (ip, config['port']) )
+		logging.info( 'downloadFile connected to '+ip+' '+str(config['port']) )
+		#todo extend the fields	
+		dataSend = json.dumps( dict(type='GF',filename=filename) )
+		s.send( dataSend )
+		s.settimeout( 500 )
+		while True:
+			try:
+				dataGet = s.recv( RECVBUFFSIZE )
+			except socket.timeout:
+				logging.info( 'time out when downloadFile( %s )', ip )
+				s.close()
+				break
+			else:
+				try:
+					dataGet = json.loads( dataGet )
+				except ValueError:
+					print 'downloadFile json.loads meet ValueError with dat\
+						\n'+str( dataGet )
+					s.close()
+					break
+				if ENDOFCONNECTION == parseDataGet(None,dataGet,(s,(ip,config['port'])))
+					s.close()
+					break
+			pass
 
 def readConfigFile( fullpath ):
 	pass
@@ -50,7 +122,7 @@ def initLog():
 	logging.basicConfig( filename=os.sep.join([config['appDataPath'],'data','log','p2p.log']),\
 		level=logging.DEBUG, \
 		format='%(asctime)-15s %(levelname)s:%(message)s' )
-	logging.info( 'app start logging' )
+	logging.info( 'app start logging-------------------------------' )
 	pass
 
 
@@ -96,12 +168,45 @@ def parseDataGet( obj, data, info ):
 	if 'type' not in data.keys():
 		logging.error( str(data)+'\nhas no key "type"' )
 		return ERR
+
 #todo better way of if else
 	if data['type'] == 'GFL':
 		#todo get file list
-		dataSend = json.dumps(\
-			dict( type='FL', seq='0 0',data='' ) )
-		info[0].send( dataSend )
+#todo semaphore for file read here
+		hashFilePath = os.sep.join( [config['appDataPath'],'data',\
+				'hashfile'] ) 
+		f = open( hashFilePath )
+		iTtl = os.stat( hashFilePath ).st_size / (RECVBUFFSIZE-2048)
+		iCur = 0
+		#minus 2048 for some other field such as type, and there will be many / added by json
+		dataRead = f.read( RECVBUFFSIZE-2048 ) 
+		while dataRead:
+			dataSend = json.dumps(\
+					dict( type='FL', seq=str(iCur)+' '+str(iTtl),data=dataRead ) )
+			if len( dataSend ) < RECVBUFFSIZE:
+				dataSend = dataSend + (RECVBUFFSIZE-len(dataSend))*' '
+			info[0].send( dataSend )
+			dataRead = f.read( RECVBUFFSIZE-2048 )
+			iCur = iCur + 1
+		f.close()
+	
+	if data['type'] == 'NOF':
+		logging.info( 'parseDataGet get NOF from '+str(info[1]) )
+		return ENDOFCONNECTION
+	if data['type'] == 'F':
+		#todo Oops! Some dup code with type=='FL'
+		jar = RecvSeq.getJar( data['filename'] )
+		jar.pushData( data )
+		if jar.isfull:
+			fBinData = jar.dataStr
+			f = open( os.sep.join([config['downloadDirPath'],data['filename']]))
+			f.write( fBinData )
+			f.close()
+			logging.info( 'download file succeeded!' )
+			P2pMainWin.appInstance.modallessMessageBox( data['filename']\
+					+u' 下载完成' )
+			RecvSeq.releaseJar( data['filename'] )
+			return ENDOFCONNECTION
 
 	if data['type'] == 'FL':
 		jar = RecvSeq.getJar( info[1][1] )
@@ -109,7 +214,20 @@ def parseDataGet( obj, data, info ):
 		if jar.isfull:
 			p = AllPeerInfo.getPeer(info[1][0])
 			p.fileDict = json.loads( jar.dataStr )
+
+			netHashFilePath = os.sep.join( [config['appDataPath'],'data',\
+					'nethashfile'] )
+			f = open( netHashFilePath, 'w' )
+			f.write( jar.dataStr )
+			f.close()
+			logging.info( 'nethashfile created!' )
+
 			RecvSeq.releaseJar( info[1][1] )
+			if P2pMainWin.appInstance:
+				l = []
+				for k,v in p.fileDict.iteritems():
+					l.append( k )
+				P2pMainWin.appInstance.setNetFileList( l )
 			return ENDOFCONNECTION
 		else:
 			return 0
@@ -133,6 +251,7 @@ Server.parseDataGet = parseDataGet
 Server.serverd( (config['hostname'],config['port']) )
 
 myMainWin = P2pMainWin()
+P2pMainWin.appInstance = myMainWin
 myMainWin.show()
 
 FileMgr.downloadDirPath = config['downloadPath'] 
