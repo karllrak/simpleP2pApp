@@ -1,3 +1,4 @@
+#coding=utf-8
 import socket
 import logging
 import json
@@ -45,7 +46,6 @@ class Server:
 		logging.info( 'serverAccept connected to '+str(conInfo[1]) )
 		conInfo[0].settimeout( 2 )
 		while P2pMainWin.running:
-			print P2pMainWin.running
 			try:
 				dataGet = conInfo[0].recv( RECVBUFFSIZE ) #todo warning too small buffer
 			except socket.timeout:
@@ -55,10 +55,12 @@ class Server:
 			else:
 				try:
 					d = json.loads( dataGet )
-				except ValueError:
+				except ValueError as ve:
 					dataSend = json.dumps(\
 						dict( type='ERR',data='Invalid format') )
 					conInfo[0].send( dataSend )
+					print 'serverAccept json.loads  meet ValueError: '+\
+							ve.message+' with data\n'+str(dataGet)
 					logging.error( 'json.loads  in serverAccept   meet ValueError from '+str(conInfo[1])+'\nwithdata:\n'+str(dataGet) )
 				else:
 					#dataGet can be json.loads  as d

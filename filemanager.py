@@ -1,3 +1,4 @@
+#coding=utf-8
 import json
 import time
 import os
@@ -6,7 +7,8 @@ import logging
 from p2pconstants import *
 from threading import Thread
 from threading import BoundedSemaphore
-#coding=utf-8
+from p2pmainwin import *
+
 class FileInfo:
 	def __init__( self, dirname=None, fname=None ):
 		self.dirname = dirname
@@ -25,7 +27,7 @@ class FileMgr:
 	syncInterval = 120
 	downloadDirPath = None
 	fileWriteSema = None
-	fileBlockSize = 1024*64 
+	fileBlockSize = 1024*1024 
 	@staticmethod
 	def init():
 		FileMgr.fileWriteSema = BoundedSemaphore( value=1 )
@@ -36,10 +38,9 @@ class FileMgr:
 	def syncd():
 		logging.info( 'sync daemon started' )
 #todoi when to stop?
-		i = 0
-		from p2pmainwin import *
+		i = FileMgr.syncInterval
 		while P2pMainWin.running:
-			print str(P2pMainWin.running)+' syncd'
+			#print str(P2pMainWin.running)+' syncd'
 			if FileMgr.syncInterval == i:
 				i = 0
 				FileMgr.syncRoutine()
@@ -57,7 +58,7 @@ class FileMgr:
 			#todoi lock here!
 			FileMgr.fileWriteSema.acquire()
 			try:
-				f = open( FileMgr.localHashFilePath, 'w' )
+				f = open( FileMgr.localHashFilePath, 'wb' )
 			except IOError:
 				logging.error( 'opening '+FileMgr.localHashFilePath+' meet IOError' )
 				return
@@ -75,7 +76,7 @@ class FileMgr:
 			f = open(os.sep.join([dirname,fname]),'r')
 			dataRead = f.read( FileMgr.fileBlockSize )
 			while P2pMainWin.running and dataRead:
-				print P2pMainWin.running
+				#print P2pMainWin.running
 				fi.hashArray.append( hashlib.sha1(dataRead).hexdigest())
 				dataRead = f.read( FileMgr.fileBlockSize )
 			f.close()

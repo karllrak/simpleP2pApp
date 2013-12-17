@@ -14,11 +14,29 @@ from ui.ui_mainwindow import *
 class P2pMainWin( QMainWindow ):
 	appInstance = None
 	running = True
+	parseDataGet = None
 	def __init__( self ):
 		QMainWindow.__init__( self, parent=None )
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi( self )
+		self.isquiting = False
 		self.ui.ipListForFilename = QListWidget()
+		self.systemTray = QSystemTrayIcon( self )
+		self.systemTrayMenu = QMenu( self )
+		self.windowIcon = QIcon(u':/share/systemTray.png')
+		self.trayIcon = QIcon(u':/share/ef.ico')
+		self.setWindowIcon( self.windowIcon )
+
+		self.act_restore = QAction( u"恢复窗口", self );
+		self.act_exit = QAction( u"退出" ,self );
+		self.systemTrayMenu.addAction( self.act_restore );
+		self.systemTrayMenu.addSeparator();
+		self.systemTrayMenu.addAction( self.act_exit );
+
+		self.systemTray.setContextMenu( self.systemTrayMenu )
+		self.systemTray.setIcon( self.trayIcon )
+		self.systemTray.show()
+		self.systemTray.showMessage( 'simpleP2p', u'后台运行中...' )
 		self.createConnections()
 		self.setFixedSize(500,500)
 		from peer import *
@@ -43,11 +61,18 @@ class P2pMainWin( QMainWindow ):
 		mb.show()
 
 	def closeEvent( self, evt ):
-		P2pMainWin.running = False
-		print 'Goodbye!'
-		logging.info( 'app exit ++++++++++++++' )
-		evt.accept()
-		sys.exit()
+		if self.isquiting:
+			P2pMainWin.running = False
+			global P2PRUNNING
+			P2PRUNNING = False
+			print 'Goodbye!'
+			logging.info( 'app exit ++++++++++++++' )
+			evt.accept()
+			sys.exit()
+		else:
+			self.hide()
+			evt.ignore()
+
 	def setNetFileList( self, l ):
 		for item in l:
 			self.ui.localFileListWidget.addItem( item )
@@ -75,6 +100,7 @@ class P2pMainWin( QMainWindow ):
 		print u'searching file '+filename
 	def exit( self ):
 		P2pMainWin.running = False
+		self.isquiting = True
 		sys.exit()
 
 	def createConnections( self ):
@@ -85,6 +111,8 @@ class P2pMainWin( QMainWindow ):
 		self.connect( self.ui.searchBtn, SIGNAL('clicked()'),\
 				self.searchFile )
 		self.connect( self,SIGNAL('showList'),self.showList )
+		self.connect( self.act_exit,SIGNAL('triggered()'), self.exit )
+		self.connect( self.act_restore, SIGNAL('triggered()'),self.showNormal )
 		self.connect( self.ui.exitAction, SIGNAL('triggered()'),\
 				self.exit )
 	pass
@@ -119,12 +147,12 @@ def downloadFile( filename ):
 			else:
 				try:
 					dataGet = json.loads( dataGet )
-				except ValueError:
-					print 'downloadFile json.loads meet ValueError with dat\
-a\n'+str( dataGet )
+				except ValueError as ve:
+					print 'downloadFile json.loads meet ValueError:'\
+							+ve.message+' with data\n'+str( dataGet )
 					s.close()
 					break
-				if ENDOFCONNECTION == parseDataGet(None,dataGet,(s,(ip[0],config['port'])) ):
+				if ENDOFCONNECTION == AllPeerInfo().parseDataGet(dataGet,(s,(ip[0],config['port'])) ):
 					s.close()
 					break
 			pass

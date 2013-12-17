@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/share">
+        <file>systemTray.png</file>
+        <file>ef.ico</file>
+    </qresource>
+</RCC>

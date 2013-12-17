@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import socket
+import struct
 import sys
 from filemanager import *
 from getIp import *
@@ -17,8 +18,12 @@ from threading import Thread
 from ui.ui_mainwindow import *
 from peer import AllPeerInfo, PeerInfo
 from p2pmainwin import P2pMainWin
+from share.qrc_simpeP2p import *
 
-
+reload( sys )
+sys.setdefaultencoding('utf-8')
+#codec='base64'
+codec='utf-8'
 def readConfigFile( fullpath ):
 	pass
 
@@ -79,6 +84,28 @@ def parseDataGet( obj, data, info ):
 		logging.error( str(data)+'\nhas no key "type"' )
 		return ERR
 
+	if data['type'] == 'GF':
+		fileFullPath = os.sep.join([config['downloadPath'],data['filename']])
+		if not os.path.isfile( fileFullPath ):
+			dataSend = json.dumps( dict(type='NOF') )
+			info[0].send( dataSend )
+		else:
+			f = open( fileFullPath,'rb' )
+			iTtl = os.stat( fileFullPath ).st_size / (RECVBUFFSIZE/2)
+			iCur = 0
+			dataRead = f.read( RECVBUFFSIZE/2)
+			while P2pMainWin.running and dataRead:
+				dataSend = json.dumps(\
+					dict(type='F',filename=data['filename'],seq=str(iCur)+' '+str(iTtl),data=dataRead.encode(codec) )\
+					)
+				print 'download data send '+str(iCur)
+				if len(dataSend) < RECVBUFFSIZE:
+					dataSend = dataSend + (RECVBUFFSIZE-len(dataSend))*' '
+				info[0].send( dataSend )
+				dataRead = f.read( RECVBUFFSIZE/2 )
+				iCur = iCur + 1
+			f.close()
+		return ENDOFCONNECTION
 #todo better way of if else
 	if data['type'] == 'GFL':
 		#todo get file list
@@ -86,19 +113,25 @@ def parseDataGet( obj, data, info ):
 		hashFilePath = os.sep.join( [config['appDataPath'],'data',\
 				'hashfile'] ) 
 		f = open( hashFilePath )
-		iTtl = os.stat( hashFilePath ).st_size / (RECVBUFFSIZE-2048)
+		iTtl = os.stat( hashFilePath ).st_size / (RECVBUFFSIZE/2)
 		iCur = 0
 		#minus 2048 for some other field such as type, and there will be many / added by json
-		dataRead = f.read( RECVBUFFSIZE-2048 ) 
+		dataRead = f.read( RECVBUFFSIZE/2) 
 		while P2pMainWin.running and dataRead:
 			dataSend = json.dumps(\
 					dict( type='FL', seq=str(iCur)+' '+str(iTtl),data=dataRead ) )
-			if len( dataSend ) < RECVBUFFSIZE:
+			if len( dataSend ) <= RECVBUFFSIZE:
+				print str(len(dataSend))+' hashfile dataSend'
 				dataSend = dataSend + (RECVBUFFSIZE-len(dataSend))*' '
+			else:
+				print 'error dataSend too large: '+str(len(dataSend))
+				logging.error( 'dataSend '+str(len(dataSend))+' larger than'+\
+					' buffersize '+str(RECVBUFFSIZE) )
 			info[0].send( dataSend )
-			dataRead = f.read( RECVBUFFSIZE-2048 )
+			dataRead = f.read( RECVBUFFSIZE/2)
 			iCur = iCur + 1
 		f.close()
+		return  ENDOFCONNECTION
 	
 	if data['type'] == 'NOF':
 		logging.info( 'parseDataGet get NOF from '+str(info[1]) )
@@ -108,13 +141,18 @@ def parseDataGet( obj, data, info ):
 		jar = RecvSeq.getJar( data['filename'] )
 		jar.pushData( data )
 		if jar.isfull:
-			fBinData = jar.dataStr
-			f = open( os.sep.join([config['downloadDirPath'],data['filename']]))
+			fBinData = jar.dataStr.decode(codec)
+			#fBinData = jar.dataStr
+			#print fBinData
+			f = open( os.sep.join([config['downloadPath'],data['filename']]),'w')
 			f.write( fBinData )
 			f.close()
-			logging.info( 'download file succeeded!' )
+			'''
 			P2pMainWin.appInstance.modallessMessageBox( data['filename']\
 					+u' 下载完成' )
+			'''
+			print 'download end'
+			logging.info( 'download file succeeded! '+str(len(fBinData))+' bytes' )
 			RecvSeq.releaseJar( data['filename'] )
 			return ENDOFCONNECTION
 
@@ -162,13 +200,14 @@ Server.serverd( (config['hostname'],config['port']) )
 
 myMainWin = P2pMainWin()
 P2pMainWin.appInstance = myMainWin
+P2pMainWin.parseDataGet = parseDataGet
 myMainWin.show()
 
 FileMgr.downloadDirPath = config['downloadPath'] 
 FileMgr.localHashFilePath = os.sep.join([config['appDataPath'],'data',\
 		'hashfile'])
 FileMgr.init()
-AllPeerInfo.port = 10087
+AllPeerInfo.port = config['port']
 AllPeerInfo.parseDataGet = parseDataGet
 AllPeerInfo.getAllPeerFileList()
 

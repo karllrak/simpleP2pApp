@@ -1,8 +1,10 @@
+#coding=utf-8
 import logging
 import socket
 import json
 from p2pconstants import *
 from threading import Thread
+from p2pmainwin import *
 
 class PeerInfo:
 	#todo nickname for peer
@@ -79,8 +81,11 @@ class AllPeerInfo:
 			else: #get the peer response
 				try:
 					dataGet = json.loads( dataGet )
-				except ValueError:
-					print 'getOnePeerFileList json.loads meet ValueError with\n'+str(dataGet)
+				except ValueError as ve:
+					print 'getOnePeerFileList json.loads meet ValueError'+\
+							ve.message+'\n with\n'+str(dataGet)
+					logging.error( 'getOnePeerFileList json.loads meet ValueError'+\
+							ve.message+'\n with data\n\n'+str(dataGet)+'\n\n')
 					s.close()
 					break
 				if AllPeerInfo.parseDataGet:
