@@ -15,8 +15,10 @@ piecesSum = int( raw_input( '你要把它大卸几块?' ) )
 blocksize = infos.st_size / piecesSum
 origFile = open( filename, 'r' )
 
+w = 'noword'
 for i in range( 1, piecesSum ): #the last part not dealed
 	binData = origFile.read( blocksize )
+	w = w + binData
 	try:
 		f = open( 'pycut'+str(i)+filename, 'w' )
 		f.write( binData )

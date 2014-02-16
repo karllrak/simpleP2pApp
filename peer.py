@@ -20,7 +20,8 @@ class AllPeerInfo:
 	#peerList = ['10.0.2.15',]
 	port = 10087
 	#goodPeerIpList = ['10.0.2.15','10.22.142.138']
-	goodPeerIpList = ['10.22.142.138']
+	#goodPeerIpList = ['10.22.142.138']
+	goodPeerIpList = ['192.168.1.80', '10.22.142.138']
 	# { 'ip':PeerInfo }
 	peerList = {}
 	parseDataGet = None

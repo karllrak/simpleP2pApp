@@ -21,7 +21,7 @@ from p2pmainwin import P2pMainWin
 from share.qrc_simpeP2p import *
 
 reload( sys )
-sys.setdefaultencoding('utf-8')
+#sys.setdefaultencoding('utf-8')
 #codec='base64'
 codec='utf-8'
 def readConfigFile( fullpath ):
@@ -76,13 +76,38 @@ else:
 	createConfigFile( configFileFullPath )
 '''
 
-def parseDataGet( obj, data, info ):
+def parseDataGet( obj, data, info, opt='json' ):
 	'''
 	this fxn analysis the data and reponse to it
+	@param obj 
+	not used
+	@param info
+
 	'''
-	if 'type' not in data.keys():
+	if opt != 'nojson' and 'type' not in data.keys():
 		logging.error( str(data)+'\nhas no key "type"' )
 		return ERR
+
+#nojson: FPfilenamehere for 28bytes 20byte seq 10byte filesize,
+#data[60:60+filesize]
+	if opt == 'nojson':
+		jar = RecvSeq.getJar( data[2:30].strip() )
+		jar.pushData( data, 'nojson' )
+		if jar.isfull:
+			fname = data[2:30].strip()
+			fBinData = jar.dataStr
+			f = open( os.sep.join([config['downloadPath'],fname]),'wb')
+			f.write( fBinData )
+			f.close()
+			'''
+			P2pMainWin.appInstance.modallessMessageBox( data['filename']\
+					+u' 下载完成' )
+			'''
+			print 'download end'
+			logging.info( 'download file succeeded! '+str(len(fBinData))+' bytes' )
+			RecvSeq.releaseJar( data[2:30].strip() )
+			return ENDOFCONNECTION
+		return 0
 
 	if data['type'] == 'GF':
 		fileFullPath = os.sep.join([config['downloadPath'],data['filename']])
@@ -91,21 +116,51 @@ def parseDataGet( obj, data, info ):
 			info[0].send( dataSend )
 		else:
 			f = open( fileFullPath,'rb' )
-			iTtl = os.stat( fileFullPath ).st_size / (RECVBUFFSIZE/2)
+			iTtl = os.stat( fileFullPath ).st_size / (RECVBUFFSIZE-60)
 			iCur = 0
-			dataRead = f.read( RECVBUFFSIZE/2)
+			dataRead = f.read( RECVBUFFSIZE-60)
 			while P2pMainWin.running and dataRead:
-				dataSend = json.dumps(\
-					dict(type='F',filename=data['filename'],seq=str(iCur)+' '+str(iTtl),data=dataRead.encode(codec) )\
-					)
+				dataSend = 'FP'
+				dataSend = dataSend + data['filename']
+				if len(dataSend) < 30:
+					dataSend = dataSend + ' '*(30-len(dataSend))
+				seq =str(iCur)+' '+str(iTtl)
+				dataSend = dataSend + seq
+				if len(dataSend) < 50:
+					dataSend = dataSend + ' '*(50-len(dataSend))
+				dataSend = dataSend + str(len(dataRead))
+				if len(dataSend) < 60:
+					dataSend = dataSend + ' '*(60-len(dataSend))
+				#dataSend = dataSend + dataRead
+				#dataSend = ''.join([dataSend,dataRead])
+				try:
+				    db = dataSend
+				    dataSend = dataSend + dataRead
+				except UnicodeDecodeError as ude:
+				    logging.error( 'UnicodeDecodeError' )
+				    '''
+				    print 'UnicodeDecodeError'
+				    print db
+				    sys.exit()
+				    '''
+				'''
+				try:
+				    dataSend = ''.join([dataSend,dataRead])
+				except UnicodeDecodeError as ude:
+				    #todo why it will throw...
+				    print dataSend
+				    print dataRead
+				'''
 				print 'download data send '+str(iCur)
 				if len(dataSend) < RECVBUFFSIZE:
 					dataSend = dataSend + (RECVBUFFSIZE-len(dataSend))*' '
 				info[0].send( dataSend )
-				dataRead = f.read( RECVBUFFSIZE/2 )
+				print dataSend[0:60]
+				dataRead = f.read( RECVBUFFSIZE-60)
 				iCur = iCur + 1
 			f.close()
 		return ENDOFCONNECTION
+
 #todo better way of if else
 	if data['type'] == 'GFL':
 		#todo get file list
@@ -155,6 +210,7 @@ def parseDataGet( obj, data, info ):
 			logging.info( 'download file succeeded! '+str(len(fBinData))+' bytes' )
 			RecvSeq.releaseJar( data['filename'] )
 			return ENDOFCONNECTION
+		return 0
 
 	if data['type'] == 'FL':
 		jar = RecvSeq.getJar( info[1][1] )

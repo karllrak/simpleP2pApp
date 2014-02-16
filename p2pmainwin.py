@@ -136,10 +136,13 @@ def downloadFile( filename ):
 		#todo extend the fields	
 		dataSend = json.dumps( dict(type='GF',filename=filename) )
 		s.send( dataSend )
-		s.settimeout( 500 )
+		s.settimeout( 5 )
 		while P2pMainWin.running:
 			try:
 				dataGet = s.recv( RECVBUFFSIZE )
+				print '------------'
+				print dataGet
+				print '-------------'
 			except socket.timeout:
 				logging.info( 'time out when downloadFile( %s )', ip[0] )
 				s.close()
@@ -148,10 +151,16 @@ def downloadFile( filename ):
 				try:
 					dataGet = json.loads( dataGet )
 				except ValueError as ve:
-					print 'downloadFile json.loads meet ValueError:'\
-							+ve.message+' with data\n'+str( dataGet )
-					s.close()
-					break
+					if dataGet[dataGet.find('F'):dataGet.find('F')+2] == 'FP':
+						if ENDOFCONNECTION == AllPeerInfo().parseDataGet(dataGet,(s,(ip[0],config['port'])),'nojson' ):
+							s.close()
+							break
+						continue
+					else:
+						print 'downloadFile json.loads meet ValueError:'\
+								+ve.message+' with data\n'+str( dataGet )
+						s.close()
+						break
 				if ENDOFCONNECTION == AllPeerInfo().parseDataGet(dataGet,(s,(ip[0],config['port'])) ):
 					s.close()
 					break

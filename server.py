@@ -56,12 +56,20 @@ class Server:
 				try:
 					d = json.loads( dataGet )
 				except ValueError as ve:
-					dataSend = json.dumps(\
-						dict( type='ERR',data='Invalid format') )
-					conInfo[0].send( dataSend )
-					print 'serverAccept json.loads  meet ValueError: '+\
-							ve.message+' with data\n'+str(dataGet)
-					logging.error( 'json.loads  in serverAccept   meet ValueError from '+str(conInfo[1])+'\nwithdata:\n'+str(dataGet) )
+					if dataGet[0:2] == 'FP':
+						if Server.parseDataGet:
+							if ENDOFCONNECTION == Server().parseDataGet(\
+									dataGet,conInfo,'nojson' ):
+								conInfo[0].close()
+								break
+							continue
+					else:
+						dataSend = json.dumps(\
+							dict( type='ERR',data='Invalid format') )
+						conInfo[0].send( dataSend )
+						print 'serverAccept json.loads  meet ValueError: '+\
+								ve.message+' with data\n'+str(dataGet)
+						logging.error( 'json.loads  in serverAccept   meet ValueError from '+str(conInfo[1])+'\nwithdata:\n'+str(dataGet) )
 				else:
 					#dataGet can be json.loads  as d
 					if Server.parseDataGet:
