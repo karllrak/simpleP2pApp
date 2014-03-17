@@ -21,7 +21,7 @@ class AllPeerInfo:
 	port = 10087
 	#goodPeerIpList = ['10.0.2.15','10.22.142.138']
 	#goodPeerIpList = ['10.22.142.138']
-	goodPeerIpList = ['192.168.1.80', '10.22.142.138']
+	goodPeerIpList = ['192.168.1.80', '10.22.142.138', '10.2.222.34']
 	# { 'ip':PeerInfo }
 	peerList = {}
 	parseDataGet = None
@@ -71,7 +71,7 @@ class AllPeerInfo:
 		s.send( dataSend )
 		s.settimeout( 2 )
 		from p2pmainwin import *
-		while P2pMainWin.running:
+		while P2pMainWin.running and Server.serverRunning:
 			try:
 				dataGet = s.recv( RECVBUFFSIZE ) #todo warning too small?
 				#dataGet = dataGet.strip()

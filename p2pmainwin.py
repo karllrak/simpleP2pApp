@@ -137,7 +137,7 @@ def downloadFile( filename ):
 		dataSend = json.dumps( dict(type='GF',filename=filename) )
 		s.send( dataSend )
 		s.settimeout( 5 )
-		while P2pMainWin.running:
+		while P2pMainWin.running and Server.serverRunning:
 			try:
 				dataGet = s.recv( RECVBUFFSIZE )
 				print '------------'

@@ -20,7 +20,7 @@ from peer import AllPeerInfo, PeerInfo
 from p2pmainwin import P2pMainWin
 from share.qrc_simpeP2p import *
 
-reload( sys )
+#reload( sys )
 #sys.setdefaultencoding('utf-8')
 #codec='base64'
 codec='utf-8'
@@ -121,7 +121,7 @@ def parseDataGet( obj, data, info, opt='json' ):
 			dataRead = f.read( RECVBUFFSIZE-60)
 			while P2pMainWin.running and dataRead:
 				dataSend = 'FP'
-				dataSend = dataSend + data['filename']
+				dataSend = dataSend + data['filename'].encode('utf-8')
 				if len(dataSend) < 30:
 					dataSend = dataSend + ' '*(30-len(dataSend))
 				seq =str(iCur)+' '+str(iTtl)
@@ -131,31 +131,13 @@ def parseDataGet( obj, data, info, opt='json' ):
 				dataSend = dataSend + str(len(dataRead))
 				if len(dataSend) < 60:
 					dataSend = dataSend + ' '*(60-len(dataSend))
-				#dataSend = dataSend + dataRead
-				#dataSend = ''.join([dataSend,dataRead])
-				try:
-				    db = dataSend
-				    dataSend = dataSend + dataRead
-				except UnicodeDecodeError as ude:
-				    logging.error( 'UnicodeDecodeError' )
-				    '''
-				    print 'UnicodeDecodeError'
-				    print db
-				    sys.exit()
-				    '''
-				'''
-				try:
-				    dataSend = ''.join([dataSend,dataRead])
-				except UnicodeDecodeError as ude:
-				    #todo why it will throw...
-				    print dataSend
-				    print dataRead
-				'''
-				print 'download data send '+str(iCur)
+
+				dataSend = dataSend + dataRead
+				#print 'download data send '+str(iCur)
 				if len(dataSend) < RECVBUFFSIZE:
 					dataSend = dataSend + (RECVBUFFSIZE-len(dataSend))*' '
 				info[0].send( dataSend )
-				print dataSend[0:60]
+				#print dataSend[0:60]
 				dataRead = f.read( RECVBUFFSIZE-60)
 				iCur = iCur + 1
 			f.close()
